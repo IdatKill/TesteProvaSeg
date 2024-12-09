@@ -58,18 +58,46 @@ app.MapPost("/api/tarefas/cadastrar", ([FromServices] AppDataContext ctx, [FromB
 app.MapPut("/api/tarefas/alterar/{id}", ([FromServices] AppDataContext ctx, [FromRoute] string id) =>
 {
     //Implementar a alteração do status da tarefa
+    Tarefa? tarefa = ctx.Tarefas.Find(id);
+
+    if(tarefa is null){  //Código para deixar como tarefa não encontrada
+
+        return Results.NotFound("Tarefa não encontrada");
+    }
+    if(tarefa.Status == "Não iniciada"){
+
+        tarefa.Status = "Em andamento";
+    }else if(tarefa.Status == "Em andamento"){
+
+        tarefa.Status = "Concluída";
+    }
+
+    ctx.Tarefas.Update(tarefa);   //finalizar com a alteração/update das tarefas.
+    ctx.SaveChanges();
+    return Results.Ok(tarefa);
+
 });
 
 //GET: http://localhost:5273/tarefas/naoconcluidas
 app.MapGet("/api/tarefas/naoconcluidas", ([FromServices] AppDataContext ctx) =>
 {
     //Implementar a listagem de tarefas não concluídas
+    return Results.Ok(ctx.Tarefas.Where(x => x.Status != "Concluída").ToList());
 });
 
 //GET: http://localhost:5273/tarefas/concluidas
 app.MapGet("/api/tarefas/concluidas", ([FromServices] AppDataContext ctx) =>
 {
     //Implementar a listagem de tarefas concluídas
+    return Results.Ok(ctx.Tarefas.Where(x => x.Status == "Concluída" ).ToList());
+});
+
+//quero outra criação de endpoint que utilize as tarefas e variavel de query string para filtrar as tarefas por status
+//GET: http://localhost:5273/tarefas/filtrar?status=Concluída
+app.MapGet("/api/tarefas/filtrar", ([FromServices] AppDataContext ctx, [FromQuery] string status) =>
+{
+    //Implementar a listagem de tarefas filtradas por status
+    return Results.Ok(ctx.Tarefas.Where(x => x.Status == status).ToList());
 });
 
 app.Run();
